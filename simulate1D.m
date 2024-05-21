@@ -62,9 +62,7 @@ if (plotRes == 1)
     cells = num2cell(spins,2);
 
     energyVals = cellfun(@energy, cells);
-    %heatCapVals = cellfun(@heatCapacity, cells);
     absMagVals = cellfun(@absMag, cells);
-    %susVals = cellfun(@susceptibility, cells);
     figure(1)
     plot(xVals, energyVals);
     xlabel('Iteration')
@@ -109,21 +107,9 @@ function [x] = energy(state)
     x = E_T/pts;
 end
 
-function [x] = heatCapacity(state, k, T)
-    %E2_T is mean of square
-    E2_T  = 6;
-    E_T = stateEnergy(state, J, H)/pts;
-    C_T = (E2_T - E_T^2)/(k*T^2);
-    x = C_T/pts;
-end
-
 function [x] = absMag(state)
     M_bar = sum(state)/pts;
     x = abs(M_bar)/pts;
-end
-
-function [x] = susceptibility(state)
-    x = 20;
 end
 
 function [result] = reverse(state, pos)
