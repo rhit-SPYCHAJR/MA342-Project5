@@ -1,10 +1,11 @@
-function [temps, spins, energies] = simulate1D(pts, iter, t0, J, H, rate, randStart, plotRes)
+function [temps, spins, energies] = simulate1D(pts, iter, t0, k, J, H, rate, randStart, plotRes)
 %SIMULATE1D simulates the 1D Ising model
 %
 %inputs: 
 %      pts: number of points to simulate
 %     iter: number of iterations to simulate 
 %       t0: initial temperature
+%        k: temperature constant
 %        J: charge interaction parameter
 %        H: external field parameter
 %     rate: rate of heating
@@ -32,20 +33,11 @@ energies(1) = stateEnergy(spins(1,:), J, H);
 
 % simulate states
 for i = 2:iter+1
-    %disp('performing iteration ')
-    %disp(i)
     for j = 1:pts
         reversed = reverse(spins(i-1,:),j);
         currentE = stateEnergy(spins(i-1,:), J, H);
         revE = stateEnergy(reversed, J, H);
         if (revE < currentE)
-            if (i < 12) 
-                %disp('standard flip')
-                %disp('initial energy is ')
-                %disp(currentE)
-                %disp('flip will result in energy')
-                %disp(revE) 
-            end
             spins(i,j) = flip(spins(i-1, j));
         elseif (revE == currentE)
             spins(i,j) = spins(i-1,j);
@@ -53,8 +45,6 @@ for i = 2:iter+1
             diff = currentE - revE;
             prob = exp(diff/T);
             if (rand < prob) 
-                %disp('performing non-standard flip, probability')
-                %disp(prob)
                 spins(i,j) = flip(spins(i-1, j));
             else
                 spins(i,j) = spins(i-1,j);
@@ -69,7 +59,23 @@ end
 %plot total energy
 if (plotRes == 1)
     xVals = linspace(0,iter, iter+1);
-    plot(xVals, energies, xVals, temps)
+    cells = num2cell(spins,2);
+
+    energyVals = cellfun(@energy, cells);
+    %heatCapVals = cellfun(@heatCapacity, cells);
+    absMagVals = cellfun(@absMag, cells);
+    %susVals = cellfun(@susceptibility, cells);
+    figure(1)
+    plot(xVals, energyVals);
+    xlabel('Iteration')
+    ylabel('Sample energy per point')
+    %plot(xVals, heatCapVals);
+    figure(2)
+    plot(xVals, absMagVals);
+    xlabel('Iteration')
+    ylabel('Sample abs. mag. per point')
+    hold off;
+    %plot(xVals, susVals);
 end
 
 function [x] = rSpin()
@@ -96,6 +102,28 @@ function [energy] = stateEnergy(state, j, h)
     end
     chargeSum = sum(state);
     energy = -1*j*tot - h*chargeSum;
+end
+
+function [x] = energy(state)
+    E_T = stateEnergy(state, J, H)/pts;
+    x = E_T/pts;
+end
+
+function [x] = heatCapacity(state, k, T)
+    %E2_T is mean of square
+    E2_T  = 6;
+    E_T = stateEnergy(state, J, H)/pts;
+    C_T = (E2_T - E_T^2)/(k*T^2);
+    x = C_T/pts;
+end
+
+function [x] = absMag(state)
+    M_bar = sum(state)/pts;
+    x = abs(M_bar)/pts;
+end
+
+function [x] = susceptibility(state)
+    x = 20;
 end
 
 function [result] = reverse(state, pos)
